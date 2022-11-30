@@ -1,0 +1,25 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+target = 'libboard'
+
+script     = os.path.join('#', 'board', localEnv['board'], 'SConscript')
+build      = os.path.join('#', 'build', localEnv['board'], 'board', localEnv['board'])
+output_dir = os.path.join('#', 'bin', env['board'])
+
+source = localEnv.SConscript(
+    script,
+    variant_dir = build,
+    duplicate = 0,
+    exports = {'env': env},
+)
+
+libboard = localEnv.StaticLibrary(
+    target = target,
+    source = source,
+)
+
+result = env.Install(output_dir, libboard)

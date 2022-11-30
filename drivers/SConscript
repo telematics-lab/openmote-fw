@@ -1,0 +1,32 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+target  = 'libdrivers'
+source  = []
+
+src_dir    = ['at86rf215', 'bme280', 'ds18b20', 'mh-z16', 'opt3001', 'sht20', 'si7006', 't6615']
+output_dir = os.path.join('#', 'bin', env['board'])
+
+for src in src_dir:
+    script = os.path.join('#', 'drivers', src, 'SConscript')
+    build  = os.path.join('#', 'build', localEnv['board'], 'drivers', src)
+
+    output = localEnv.SConscript(
+        script,
+        variant_dir = build,
+        duplicate = 0,
+        exports = {'env': env},
+    )
+    
+    source.append(output)
+
+libdrivers = localEnv.StaticLibrary(
+    target = target,
+    source = source,
+    duplicate = 0,
+)
+
+result = env.Install(output_dir, libdrivers)

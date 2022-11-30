@@ -1,0 +1,17 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+target = 'test-aes.elf'
+source = ['main.cpp']
+
+output = localEnv.Program(
+    target  = target,
+    source  = source,
+    LIBS    = localEnv['lib_name'],
+    LIBPATH = localEnv['lib_path']
+)
+
+Return('output')

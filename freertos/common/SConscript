@@ -1,0 +1,20 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+source = [
+    'croutine.c',
+    'event_groups.c',
+    'heap_2.c',
+    'list.c',
+    'queue.c',
+    'stream_buffer.c',
+    'tasks.c',
+    'timers.c'
+]
+
+common = localEnv.Object(source=source)
+
+Return('common')

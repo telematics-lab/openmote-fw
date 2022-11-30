@@ -1,0 +1,17 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+source = [
+    'Opt3001.cpp',
+]
+
+localEnv.Append(
+    CPPPATH =  []
+)
+
+common  = localEnv.Object(source=source)
+
+Return('common')

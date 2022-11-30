@@ -1,0 +1,20 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+script     = os.path.join('#', 'test', localEnv['project'], 'src', 'SConscript')
+build_dir  = os.path.join('#', 'build', localEnv['board'], 'test', localEnv['project'])
+output_dir = os.path.join('#', 'test', localEnv['project'])
+
+project = localEnv.SConscript(
+    script,
+    variant_dir = build_dir,
+    duplicate = 0,
+    exports = {'env': env},
+)
+
+env.PostBuildSize(project)
+env.PostBuildBin(project)
+env.PostBuildLoad(project)

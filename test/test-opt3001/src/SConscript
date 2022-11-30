@@ -1,0 +1,22 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+project   = 'test-opt3001'
+extension = '.elf'
+
+target = project + extension
+source = [
+	'main.cpp'
+]
+
+main = localEnv.Program(
+    target = target,
+    source = source,
+    LIBS = env['lib_name'] + ['m'],
+    LIBPATH = env['lib_path']
+)
+
+Return('main')

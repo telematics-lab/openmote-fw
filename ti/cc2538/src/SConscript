@@ -1,0 +1,33 @@
+Import('env')
+
+output_dir = "#"
+target = 'libcc2538_gcc'
+source = [
+    'adc.c',
+    'aes.c',
+    'ccm.c',
+    'cpu.c',
+    'debug.c',
+    'flash.c',
+    'gpio.c',
+    'gptimer.c',
+    'i2c.c',
+    'interrupt.c',
+    'ioc.c',
+    'pka.c',
+    'sha256.c',
+    'sleepmode.c',
+    'ssi.c',
+    'sys_ctrl.c',
+    'systick.c',
+    'uart.c',
+    'udma.c',
+    'watchdog.c'
+]
+
+libcc2538 = env.StaticLibrary(
+    target = target,
+    source = source
+)
+
+result = env.Install(output_dir, libcc2538)

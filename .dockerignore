@@ -1,0 +1,7 @@
+.git
+bin
+build
+
+*.dblite
+Dockerfile
+docker-compose.yaml

@@ -1,0 +1,13 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+source = [
+    'BoardImplementation.cpp',
+]
+
+common = localEnv.Object(source=source)
+
+Return('common')

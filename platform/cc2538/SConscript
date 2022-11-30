@@ -1,0 +1,37 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+################################################################################
+
+source = [
+    'Aes.cpp',
+    'Board.cpp',
+    'Dma.cpp',
+    'Gpio.cpp',
+    'GpioAdc.cpp',
+    'GpioIn.cpp',
+    'GpioOut.cpp',
+    'GpioPwm.cpp',
+    'I2c.cpp',
+    'InterruptHandler.cpp',
+    'Radio.cpp',
+    'RadioTimer.cpp',
+    'RandomNumberGenerator.cpp',
+    'SleepTimer.cpp',
+    'Spi.cpp',
+    'SysTick.cpp',
+    'TemperatureSensor.cpp',
+    'Timer.cpp',
+    'Uart.cpp',
+    'Watchdog.cpp',
+    'cc2538_startup_'+ localEnv['compiler'] +'.c',
+]
+
+common = localEnv.Object(source=source)
+
+Return('common')
+
+################################################################################

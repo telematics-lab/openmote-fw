@@ -1,0 +1,17 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+target = 'test-rendezvous'
+source = ['main.cpp']
+
+main = localEnv.Program(
+    target = target,
+    source = source,
+    LIBS = env['lib_name'],
+    LIBPATH = env['lib_path']
+)
+
+Return('main')

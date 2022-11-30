@@ -1,0 +1,18 @@
+import os
+
+Import('env')
+
+localEnv = env.Clone()
+
+source = [
+    'Bme280.cpp',
+    'bme280_bosch.cpp'
+]
+
+localEnv.Append(
+    CPPPATH =  []
+)
+
+common  = localEnv.Object(source=source)
+
+Return('common')
