@@ -23,6 +23,7 @@
 #include "bme280/Bme280.hpp"
 #include <string.h>
 #include "Semaphore.hpp"
+#include "opt3001/Opt3001.hpp"
 
 /*================================ define ===================================*/
 
@@ -45,12 +46,15 @@
 #define UART_BAUDRATE                       ( 115200 )
 #define RADIO_CHANNEL                       ( 26 )
 
+#define OPT3001_I2C_ADDRESS                 ( OPT3001_I2C_ADDR_GND )
+
 /*================================ typedef ==================================*/
 
 typedef struct {
   uint16_t temperature;
   uint16_t humidity;
   uint16_t pressure;
+  uint16_t light;
 } SensorData;
 
 /*=============================== prototypes ================================*/
@@ -79,6 +83,8 @@ static uint8_t eui48_address[EUI48_ADDDRESS_LENGTH];
 
 static GpioConfig sensors_pwr_cfg = {SENSORS_CTRL_PORT, SENSORS_CTRL_PIN, 0, 0, 0};
 static GpioOut sensors_pwr_ctrl(sensors_pwr_cfg);
+
+static Opt3001 opt3001(i2c, OPT3001_I2C_ADDRESS);
 
 static Task heartbeatTask{"Heartbeat", HEARTBEAT_TASK_STACK_SIZE, HEARTBEAT_TASK_PRIORITY, heartbeat, nullptr};
 static Task sensorTask{"Sensor", SENSOR_TASK_STACK_SIZE, SENSOR_TASK_PRIORITY, printSensor, nullptr};
@@ -135,6 +141,9 @@ static void printSensor(void *pvParameters) {
 
   Bme280Data bme280_data;
   SensorData sensorData;
+  Opt3001Data opt3001_data;
+
+  SensorData sensor_data;
 
   static RadioResult result;
 
@@ -146,6 +155,23 @@ static void printSensor(void *pvParameters) {
   bme280.init();
 
   while (true) {
+ 
+    /* Initialize and enable OPT3001 */
+	  opt3001.init();
+	  opt3001.enable();
+
+    /* Read light */
+    status = opt3001.read(&opt3001_data.raw);
+
+    if (status)
+    {
+      /* Turn on yellow LED */
+      led_yellow.on();
+      opt3001.convert(opt3001_data.raw, &opt3001_data.lux);
+      /* Fill-in sensor data */
+      sensorData.light       = (uint16_t) (opt3001_data.lux * 10.0f);
+
+    }
 
     //NEW
     uint16_t tx_buffer_len;
@@ -161,7 +187,7 @@ static void printSensor(void *pvParameters) {
       sensorData.pressure = (uint16_t) (bme280_data.pressure * 1.0f);
 
       led_green.on();
-      len = sprintf((char*) uartBuffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure);
+      len = sprintf((char*) uartBuffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
     }
 
     if (len > 0)
@@ -184,7 +210,7 @@ static void printSensor(void *pvParameters) {
         led_yellow.on();
 
         // Load the packet to the transmit buffer
-        len = sprintf((char*) radio_buffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure);
+        len = sprintf((char*) radio_buffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
         radio_ptr = radio_buffer;
         radio_len = sizeof(radio_buffer);
         radio_len = len;
