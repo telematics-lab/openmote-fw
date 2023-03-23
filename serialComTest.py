@@ -21,19 +21,21 @@ def storeData(serialMessage: bytes, i):
     reader_string = re.split(r'\t+', reader_string.rstrip('\t'))
     #print(reader_string)
     
-    if len(reader_string) == 11:
+    if len(reader_string) >= 13:
         i = i + 1
         id          = reader_string[1]
-        temp        = reader_string[3]
-        humidity    = reader_string[5]
-        pressure    = reader_string[7]
-        light       = reader_string[9]
+        room        = reader_string[3]
+        temp        = float(reader_string[5])
+        humidity    = float(reader_string[7])
+        pressure    = float(reader_string[9])
+        light       = float(reader_string[11])
 
         data = [
             {   
                 "measurement": "transmissionData",
                 "tags": {
-                    "openmoteID": id,                    
+                    "openmoteID": id,  
+                    "room": room
                 },"fields": {
                     "temp": temp,
                     "humidity": humidity,
@@ -50,6 +52,7 @@ def storeData(serialMessage: bytes, i):
         print("INFO CANALE -> RSSI:", reader_string[1], '\n\n')
     else: 
         print("[ERR] Collisione o pacchetto danneggiato...\n")
+        #print(reader_string)
     return i
 
 clientTest = InfluxDBClient(
