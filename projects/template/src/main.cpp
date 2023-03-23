@@ -1,8 +1,8 @@
 /**
  * @file       main.cpp
- * @author     A. Petrosino - G. Sciddurlo
- * @version    v0.01
- * @date       Nov, 2022
+ * @author     A. Petrosino - G. Sciddurlo - F. Greco
+ * @version    v0.02
+ * @date       Mar, 2023
  * @brief
  *
  */
@@ -41,12 +41,15 @@
 #define BME280_I2C_ADDRESS          ( BME280_I2C_ADDR_PRIM )
 
 #define TX_BUFFER_LENGTH (127)
-#define EUI48_ADDDRESS_LENGTH (6)
+// #define EUI48_ADDDRESS_LENGTH (6)
+#define EUI64_ADDDRESS_LENGTH (8)
 
 #define UART_BAUDRATE                       ( 115200 )
 #define RADIO_CHANNEL                       ( 26 )
 
 #define OPT3001_I2C_ADDRESS                 ( OPT3001_I2C_ADDR_GND )
+
+#define CURRENT_ROOM ( "Kitchen" )
 
 /*================================ typedef ==================================*/
 
@@ -79,7 +82,8 @@ static uint8_t lqi;
 static void heartbeat(void *pvParameters);
 static void printSensor(void *pvParameters);
 
-static uint8_t eui48_address[EUI48_ADDDRESS_LENGTH];
+// static uint8_t eui48_address[EUI48_ADDDRESS_LENGTH];
+static uint8_t eui64_address[EUI64_ADDDRESS_LENGTH];
 
 static GpioConfig sensors_pwr_cfg = {SENSORS_CTRL_PORT, SENSORS_CTRL_PIN, 0, 0, 0};
 static GpioOut sensors_pwr_ctrl(sensors_pwr_cfg);
@@ -94,12 +98,39 @@ static uint8_t uartBuffer[500];
 
 static Bme280 bme280(i2c, BME280_I2C_ADDRESS);
 
+// convert EUI bytes to human readable string
+void byteArrayToString(uint8_t *byteArr, char *str, uint8_t arrLen)
+{
+    sprintf(str, "%02X", byteArr[0]);
+    for (int i = 1; i < arrLen; i++)
+        sprintf(str + strlen(str), "-%02X", byteArr[i]);
+}
+
+// unified function to fill both UART and transmit buffer
+size_t fillBuffer(uint8_t* buffer, uint8_t* eui, SensorData &sensorData) {
+
+  // EUI-48: "XX-XX-XX-XX-XX-XX"+'\0'
+  // char euiStr[EUI48_ADDDRESS_LENGTH*3];
+  // byteArrayToString(eui, euiStr, EUI48_ADDDRESS_LENGTH);
+
+  // EUI-64: "XX-XX-XX-XX-XX-XX-XX-XX"+'\0'
+  char euiStr[EUI64_ADDDRESS_LENGTH*3];
+  byteArrayToString(eui, euiStr, EUI64_ADDDRESS_LENGTH);
+
+  // return formatted buffer  
+  // return sprintf((char*) buffer, "EUI-48\t%s\tRoom\t%s\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", euiStr,CURRENT_ROOM , sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
+  return sprintf((char*) buffer, "EUI-64\t%s\tRoom\t%s\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", euiStr,CURRENT_ROOM , sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
+}
 
 /*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 int main(void) {
 
   /* Initialize the board */
   board.init();
+
+  // retrieve EUI48
+  // board.getEUI48(eui48_address);
+  board.getEUI64(eui64_address);
 
   // Enable the IEEE 802.15.4 radio
   radio.setTxCallbacks(&txInitCallback, &txDoneCallback);
@@ -143,8 +174,6 @@ static void printSensor(void *pvParameters) {
   SensorData sensorData;
   Opt3001Data opt3001_data;
 
-  SensorData sensor_data;
-
   static RadioResult result;
 
   bool status;
@@ -155,7 +184,7 @@ static void printSensor(void *pvParameters) {
   bme280.init();
 
   while (true) {
- 
+
     /* Initialize and enable OPT3001 */
 	  opt3001.init();
 	  opt3001.enable();
@@ -187,7 +216,8 @@ static void printSensor(void *pvParameters) {
       sensorData.pressure = (uint16_t) (bme280_data.pressure * 1.0f);
 
       led_green.on();
-      len = sprintf((char*) uartBuffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
+      // len = fillBuffer(uartBuffer, eui48_address, sensorData);
+      len = fillBuffer(uartBuffer, eui64_address, sensorData);
     }
 
     if (len > 0)
@@ -210,7 +240,8 @@ static void printSensor(void *pvParameters) {
         led_yellow.on();
 
         // Load the packet to the transmit buffer
-        len = sprintf((char*) radio_buffer, "ID\t%i\tTemperature\t%u\tHumidity\t%u\tPressure\t%u\tLight\t%u\t\r\n", 1, sensorData.temperature, sensorData.humidity, sensorData.pressure, sensorData.light);
+        // len = fillBuffer(radio_buffer, eui48_address, sensorData);
+        len = fillBuffer(radio_buffer, eui64_address, sensorData);
         radio_ptr = radio_buffer;
         radio_len = sizeof(radio_buffer);
         radio_len = len;
@@ -235,7 +266,7 @@ static void printSensor(void *pvParameters) {
     
     led_green.off();
 
-    Scheduler::delay_ms(1500);
+    Scheduler::delay_ms(500);
   }
 }
 
@@ -243,13 +274,14 @@ static void printSensor(void *pvParameters) {
 static void txInit(void)
 {
     // Turn on the radio LED as the packet is now transmitting
-    led_red.on();
+    // using orange LED so the red LED can work as heartbeat indicator without interruption
+    led_orange.on();
 }
 
 static void txDone(void)
 {
     // Turn off the radio LED as the packet is transmitted
-    led_red.off();
+    led_orange.off();
 
     // Let the task run once a packet is transmitted
     txSemaphore.giveFromInterrupt();

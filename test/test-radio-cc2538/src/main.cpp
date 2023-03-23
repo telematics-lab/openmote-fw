@@ -163,9 +163,9 @@ static void prvRadioRxTask(void *pvParameters)
                     /* Prepare serial buffer */
                     /* Copy radio packet payload */
                     // https://www.asciitable.it/
-                    uartBuffer[0] = 73;
-                    uartBuffer[len++] = 03;
-                    uartBuffer[len++] = 105;
+                    // uartBuffer[0] = 73;
+                    // uartBuffer[len++] = 03;
+                    // uartBuffer[len++] = 105;
                     dma.memcpy(&serial_buffer[1], &uartBuffer[0], len);
 
                     /* Send packet via Serial */
